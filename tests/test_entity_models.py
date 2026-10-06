@@ -1,11 +1,13 @@
 """Tests for all entity model types."""
 
 from kanka.models.entities import (
+    Ability,
     Calendar,
     Character,
     Creature,
     Event,
     Family,
+    Item,
     Journal,
     Location,
     Note,
@@ -13,6 +15,7 @@ from kanka.models.entities import (
     Quest,
     Race,
     Tag,
+    Timeline,
 )
 
 
@@ -375,3 +378,99 @@ class TestEntityTypeProperties:
 
         for entity, expected_type in entities_and_types:
             assert entity.entity_type == expected_type
+
+
+class TestAbility:
+    """Test Ability model."""
+
+    def test_ability_creation(self):
+        """Test creating an ability."""
+        ability = Ability(
+            id=1,
+            entity_id=100,
+            name="Fireball",
+            created_at="2024-01-01T00:00:00.000000Z",
+            created_by=1,
+            updated_at="2024-01-01T00:00:00.000000Z",
+            updated_by=1,
+            type="Spell",
+            charges="3",
+            abilities=[2, 3],
+        )
+
+        assert ability.name == "Fireball"
+        assert ability.type == "Spell"
+        assert ability.charges == "3"
+        assert ability.abilities == [2, 3]
+        assert ability.entity_type == "ability"
+
+
+class TestItem:
+    """Test Item model."""
+
+    def test_item_creation(self):
+        """Test creating an item."""
+        item = Item(
+            id=1,
+            entity_id=100,
+            name="Lantern",
+            created_at="2024-01-01T00:00:00.000000Z",
+            created_by=1,
+            updated_at="2024-01-01T00:00:00.000000Z",
+            updated_by=1,
+            type="Tool",
+            location_id=5,
+            character_id=7,
+            price="12 gp",
+            size="Small",
+            weight="1 kg",
+            creators=[7],
+        )
+
+        assert item.name == "Lantern"
+        assert item.location_id == 5
+        assert item.character_id == 7
+        assert item.price == "12 gp"
+        assert item.weight == "1 kg"
+        assert item.creators == [7]
+        assert item.entity_type == "item"
+
+    def test_item_defaults(self):
+        """Test that the type-specific fields default to None."""
+        item = Item(
+            id=1,
+            entity_id=100,
+            name="Rope",
+            created_at="2024-01-01T00:00:00.000000Z",
+            created_by=1,
+            updated_at="2024-01-01T00:00:00.000000Z",
+        )
+
+        assert item.location_id is None
+        assert item.character_id is None
+        assert item.creators is None
+
+
+class TestTimeline:
+    """Test Timeline model."""
+
+    def test_timeline_creation(self):
+        """Test creating a timeline."""
+        timeline = Timeline(
+            id=1,
+            entity_id=100,
+            name="Ages of the World",
+            created_at="2024-01-01T00:00:00.000000Z",
+            created_by=1,
+            updated_at="2024-01-01T00:00:00.000000Z",
+            updated_by=1,
+            type="Chronology",
+            eras=[{"id": 1, "name": "First Age"}],
+            revert_order=0,
+        )
+
+        assert timeline.name == "Ages of the World"
+        assert timeline.type == "Chronology"
+        assert timeline.eras[0]["name"] == "First Age"
+        assert timeline.revert_order == 0
+        assert timeline.entity_type == "timeline"

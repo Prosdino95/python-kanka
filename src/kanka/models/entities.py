@@ -18,6 +18,9 @@ Entity Types:
     - Creature: Creature and monster templates
     - Calendar: Campaign calendars
     - Tag: Organizational tags
+    - Ability: Spells, powers, and other abilities
+    - Item: Objects, equipment, and treasure
+    - Timeline: Chronologies of the campaign world
 """
 
 from .base import Entity
@@ -281,6 +284,71 @@ class Calendar(Entity):
     leap_year_start: int | None = None
 
 
+class Ability(Entity):
+    """Ability entity representing spells, powers, and traits.
+
+    Abilities are the things an entity can do: spells, feats,
+    class features, or any other named capability.
+
+    Attributes:
+        type: Ability type/category
+        charges: How many times the ability can be used
+        abilities: IDs of child abilities, for ability trees
+        posts: Related posts (when ?related=1)
+        attributes: Custom attributes (when ?related=1)
+    """
+
+    type: str | None = None
+    charges: str | None = None
+    abilities: list[int] | None = None
+
+
+class Item(Entity):
+    """Item entity representing objects, equipment, and treasure.
+
+    Items cover everything from a rusty key to a legendary
+    artifact, including who owns it and where it is.
+
+    Attributes:
+        type: Item type/category
+        location_id: Where the item currently is
+        character_id: Which character carries it
+        price: Item price, as free text
+        size: Item size, as free text
+        weight: Item weight, as free text
+        creators: IDs of the characters who made it
+        posts: Related posts (when ?related=1)
+        attributes: Custom attributes (when ?related=1)
+    """
+
+    type: str | None = None
+    location_id: int | None = None
+    character_id: int | None = None
+    price: str | None = None
+    size: str | None = None
+    weight: str | None = None
+    creators: list[int] | None = None
+
+
+class Timeline(Entity):
+    """Timeline entity representing a chronology of events.
+
+    Timelines group eras, which in turn hold the elements
+    placed along the chronology.
+
+    Attributes:
+        type: Timeline type/category
+        eras: Era definitions along the timeline
+        revert_order: Whether the timeline reads newest first
+        posts: Related posts (when ?related=1)
+        attributes: Custom attributes (when ?related=1)
+    """
+
+    type: str | None = None
+    eras: list[dict] | None = None
+    revert_order: int | None = None
+
+
 # Forward reference updates
 Character.model_rebuild()
 Location.model_rebuild()
@@ -294,3 +362,6 @@ Event.model_rebuild()
 Creature.model_rebuild()
 Tag.model_rebuild()
 Calendar.model_rebuild()
+Ability.model_rebuild()
+Item.model_rebuild()
+Timeline.model_rebuild()

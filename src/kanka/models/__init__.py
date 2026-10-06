@@ -28,11 +28,13 @@ from .common import (
     Trait,
 )
 from .entities import (
+    Ability,
     Calendar,
     Character,
     Creature,
     Event,
     Family,
+    Item,
     Journal,
     Location,
     Note,
@@ -40,6 +42,7 @@ from .entities import (
     Quest,
     Race,
     Tag,
+    Timeline,
 )
 
 __all__ = [
@@ -47,11 +50,13 @@ __all__ = [
     "KankaModel",
     "Entity",
     # Entity models
+    "Ability",
     "Calendar",
     "Character",
     "Creature",
     "Event",
     "Family",
+    "Item",
     "Journal",
     "Location",
     "Note",
@@ -59,6 +64,7 @@ __all__ = [
     "Quest",
     "Race",
     "Tag",
+    "Timeline",
     # Common models
     "Post",
     "SearchResult",

@@ -1,6 +1,6 @@
 # Entity Types Reference
 
-All entity types inherit from the `Entity` base class. This page documents the common fields and the type-specific fields for each of the 12 supported entity types.
+All entity types inherit from the `Entity` base class. This page documents the common fields and the type-specific fields for each of the 15 supported entity types.
 
 ## Common Fields (Entity Base)
 
@@ -27,6 +27,28 @@ Every entity type inherits these fields:
 ### Property
 
 - `entity_type` → `str` — Returns the lowercase class name (e.g., `"character"`, `"location"`)
+
+---
+
+## Ability
+
+Spells, powers, feats, and any other named capability an entity can have.
+
+**Manager:** `client.abilities`
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `type` | `str \| None` | `None` | Ability type/category |
+| `charges` | `str \| None` | `None` | How many times the ability can be used |
+| `abilities` | `list[int] \| None` | `None` | IDs of child abilities, for ability trees |
+
+```python
+ability = client.abilities.create(
+    name="Fireball",
+    type="Spell",
+    charges="3",
+)
+```
 
 ---
 
@@ -164,6 +186,33 @@ family = client.families.create(
 branch = client.families.create(
     name="Baggins of Hobbiton",
     family_id=family.id,
+)
+```
+
+---
+
+## Item
+
+Objects, equipment, and treasure, including who carries them and where they are.
+
+**Manager:** `client.items`
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `type` | `str \| None` | `None` | Item type/category |
+| `location_id` | `int \| None` | `None` | Where the item currently is |
+| `character_id` | `int \| None` | `None` | Which character carries it |
+| `price` | `str \| None` | `None` | Item price, as free text |
+| `size` | `str \| None` | `None` | Item size, as free text |
+| `weight` | `str \| None` | `None` | Item weight, as free text |
+| `creators` | `list[int] \| None` | `None` | IDs of the characters who made it |
+
+```python
+item = client.items.create(
+    name="Lanterna del Contapietre",
+    type="Attrezzo",
+    price="12 mo",
+    weight="1 kg",
 )
 ```
 
@@ -359,5 +408,28 @@ sub_tag = client.tags.create(
 character = client.characters.create(
     name="Gandalf",
     tags=[tag.id, sub_tag.id],
+)
+```
+
+---
+
+## Timeline
+
+Chronologies of the campaign world, made of eras that hold the elements placed along them.
+
+**Manager:** `client.timelines`
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `type` | `str \| None` | `None` | Timeline type/category |
+| `eras` | `list[dict] \| None` | `None` | Era definitions along the timeline |
+| `revert_order` | `int \| None` | `None` | Whether the timeline reads newest first |
+
+Eras and their elements live on their own endpoints and are not managed by this library yet.
+
+```python
+timeline = client.timelines.create(
+    name="Storia delle Terre Crepuscolari",
+    type="Cronologia",
 )
 ```

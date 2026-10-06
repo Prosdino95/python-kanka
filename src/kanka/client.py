@@ -31,11 +31,13 @@ from .exceptions import (
 from .managers import EntityManager, OrganisationManager
 from .models.common import GalleryImage, SearchResult
 from .models.entities import (
+    Ability,
     Calendar,
     Character,
     Creature,
     Event,
     Family,
+    Item,
     Journal,
     Location,
     Note,
@@ -43,6 +45,7 @@ from .models.entities import (
     Quest,
     Race,
     Tag,
+    Timeline,
 )
 
 
@@ -72,11 +75,13 @@ class KankaClient:
         max_retry_delay (float): Maximum delay between retries in seconds
 
     Entity Managers:
+        abilities: Access to Ability entities
         calendars: Access to Calendar entities
         characters: Access to Character entities
         creatures: Access to Creature entities
         events: Access to Event entities
         families: Access to Family entities
+        items: Access to Item entities
         journals: Access to Journal entities
         locations: Access to Location entities
         notes: Access to Note entities
@@ -84,6 +89,7 @@ class KankaClient:
         quests: Access to Quest entities
         races: Access to Race entities
         tags: Access to Tag entities
+        timelines: Access to Timeline entities
 
     Example:
         >>> # Basic usage with automatic rate limit handling
@@ -161,11 +167,13 @@ class KankaClient:
     def _init_managers(self):
         """Initialize entity managers for each entity type."""
         # Core entities
+        self._abilities = EntityManager(self, "abilities", Ability)
         self._calendars = EntityManager(self, "calendars", Calendar)
         self._characters = EntityManager(self, "characters", Character)
         self._creatures = EntityManager(self, "creatures", Creature)
         self._events = EntityManager(self, "events", Event)
         self._families = EntityManager(self, "families", Family)
+        self._items = EntityManager(self, "items", Item)
         self._journals = EntityManager(self, "journals", Journal)
         self._locations = EntityManager(self, "locations", Location)
         self._notes = EntityManager(self, "notes", Note)
@@ -173,6 +181,16 @@ class KankaClient:
         self._quests = EntityManager(self, "quests", Quest)
         self._races = EntityManager(self, "races", Race)
         self._tags = EntityManager(self, "tags", Tag)
+        self._timelines = EntityManager(self, "timelines", Timeline)
+
+    @property
+    def abilities(self) -> EntityManager[Ability]:
+        """Access ability entities.
+
+        Returns:
+            EntityManager[Ability]: Manager for Ability entity operations
+        """
+        return self._abilities
 
     @property
     def calendars(self) -> EntityManager[Calendar]:
@@ -218,6 +236,15 @@ class KankaClient:
             EntityManager[Family]: Manager for Family entity operations
         """
         return self._families
+
+    @property
+    def items(self) -> EntityManager[Item]:
+        """Access item entities.
+
+        Returns:
+            EntityManager[Item]: Manager for Item entity operations
+        """
+        return self._items
 
     @property
     def journals(self) -> EntityManager[Journal]:
@@ -282,6 +309,15 @@ class KankaClient:
             EntityManager[Tag]: Manager for Tag entity operations
         """
         return self._tags
+
+    @property
+    def timelines(self) -> EntityManager[Timeline]:
+        """Access timeline entities.
+
+        Returns:
+            EntityManager[Timeline]: Manager for Timeline entity operations
+        """
+        return self._timelines
 
     def search(self, term: str, page: int = 1) -> list[SearchResult]:
         """Search across all entity types.

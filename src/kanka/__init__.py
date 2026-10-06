@@ -39,6 +39,7 @@ from .exceptions import (
 
 # Import models for easier access
 from .models import (  # Base models; Entity models; Common models
+    Ability,
     Calendar,
     Character,
     Creature,
@@ -49,6 +50,7 @@ from .models import (  # Base models; Entity models; Common models
     Event,
     Family,
     GalleryImage,
+    Item,
     Journal,
     KankaModel,
     Location,
@@ -59,6 +61,7 @@ from .models import (  # Base models; Entity models; Common models
     Race,
     SearchResult,
     Tag,
+    Timeline,
     Trait,
 )
 
@@ -74,11 +77,13 @@ __all__ = [
     "KankaModel",
     "Entity",
     # Entity models
+    "Ability",
     "Calendar",
     "Character",
     "Creature",
     "Event",
     "Family",
+    "Item",
     "Journal",
     "Location",
     "Note",
@@ -86,6 +91,7 @@ __all__ = [
     "Quest",
     "Race",
     "Tag",
+    "Timeline",
     # Common models
     "Post",
     "SearchResult",
