@@ -8,7 +8,12 @@ from typing import TYPE_CHECKING, Any, List, TypeVar  # noqa: UP035
 
 from .exceptions import NotFoundError
 from .models.base import Entity, Post
-from .models.common import EntityAsset, EntityImageInfo
+from .models.common import (
+    EntityAsset,
+    EntityImageInfo,
+    OrganisationMember,
+)
+from .models.entities import Organisation
 
 if TYPE_CHECKING:
     from .client import KankaClient
@@ -1017,4 +1022,176 @@ class EntityManager[T: Entity]:
         if is_header:
             params["is_header"] = 1
         self.client._request("DELETE", url, params=params)
+        return True
+
+
+class OrganisationManager(EntityManager[Organisation]):
+    """Manages organisations, including their list of members.
+
+    Members are not a field of the organisation: they live on their own
+    endpoint, /organisations/{id}/organisation_members. Sending a "members"
+    key in an organisation payload is accepted by the API and silently
+    ignored, so use these methods instead.
+
+    IMPORTANT: Unlike posts, members do NOT use entity_ids! Both the
+    organisation and the character are addressed by their type-specific ID
+    (organisation.id, character.id), and the API also wants organisation_id
+    repeated in the request body.
+    """
+
+    @staticmethod
+    def _extract_organisation_id(organisation_or_id: Organisation | int) -> int:
+        """Get the type-specific ID of an organisation.
+
+        Args:
+            organisation_or_id: The organisation or its ID (NOT its entity_id!)
+
+        Returns:
+            The organisation's type-specific ID
+        """
+        if isinstance(organisation_or_id, int):
+            return organisation_or_id
+        return organisation_or_id.id
+
+    def _members_url(
+        self, organisation_or_id: Organisation | int, member_id: int | None = None
+    ) -> str:
+        """Build the members endpoint URL for an organisation.
+
+        Args:
+            organisation_or_id: The organisation or its type-specific ID
+            member_id: Optional membership ID for single-member operations
+
+        Returns:
+            The endpoint URL, relative to the campaign
+        """
+        organisation_id = self._extract_organisation_id(organisation_or_id)
+        url = f"{self.endpoint}/{organisation_id}/organisation_members"
+        return f"{url}/{member_id}" if member_id else url
+
+    def list_members(
+        self,
+        organisation_or_id: Organisation | int,
+        page: int = 1,
+        limit: int = 30,
+    ) -> list[OrganisationMember]:
+        """List the members of an organisation.
+
+        Args:
+            organisation_or_id: The organisation or its type-specific ID
+            page: Page number
+            limit: Results per page
+
+        Returns:
+            List of OrganisationMember instances
+        """
+        params: dict[str, int | str] = {"page": page, "limit": limit}
+
+        response = self.client._request(
+            "GET", self._members_url(organisation_or_id), params=params
+        )
+        return [OrganisationMember(**item) for item in response["data"]]
+
+    def add_member(
+        self,
+        organisation_or_id: Organisation | int,
+        character_id: int,
+        *,
+        role: str | None = None,
+        is_private: bool | None = None,
+        **kwargs,
+    ) -> OrganisationMember:
+        """Add a character to an organisation.
+
+        Args:
+            organisation_or_id: The organisation or its type-specific ID
+            character_id: The character's type-specific ID (NOT its entity_id!)
+            role: The character's role in the organisation
+            is_private: Whether the membership is private
+            **kwargs: Additional membership fields
+
+        Returns:
+            The created OrganisationMember
+
+        Raises:
+            ValidationError: If either ID is unknown to the API
+
+        Example:
+            >>> organisation = client.organisations.get(2)
+            >>> character = client.characters.get(10)
+            >>> member = client.organisations.add_member(
+            ...     organisation, character.id, role="Sovrintendente"
+            ... )
+        """
+        organisation_id = self._extract_organisation_id(organisation_or_id)
+
+        # The API wants organisation_id in the body as well as in the URL
+        data: dict[str, Any] = {
+            "organisation_id": organisation_id,
+            "character_id": character_id,
+            **kwargs,
+        }
+        if role is not None:
+            data["role"] = role
+        if is_private is not None:
+            data["is_private"] = is_private
+
+        response = self.client._request(
+            "POST", self._members_url(organisation_id), json=data
+        )
+        return OrganisationMember(**response["data"])
+
+    def update_member(
+        self,
+        organisation_or_id: Organisation | int,
+        member_id: int,
+        *,
+        role: str | None = None,
+        is_private: bool | None = None,
+        **kwargs,
+    ) -> OrganisationMember:
+        """Update an existing membership.
+
+        Only the given fields are sent, so a role can be changed without
+        repeating the IDs.
+
+        Args:
+            organisation_or_id: The organisation or its type-specific ID
+            member_id: The membership ID, as returned by add_member or
+                list_members (not the character's ID)
+            role: New role, if changing it
+            is_private: New privacy setting, if changing it
+            **kwargs: Additional fields to update
+
+        Returns:
+            The updated OrganisationMember
+        """
+        data: dict[str, Any] = dict(kwargs)
+        if role is not None:
+            data["role"] = role
+        if is_private is not None:
+            data["is_private"] = is_private
+
+        response = self.client._request(
+            "PATCH", self._members_url(organisation_or_id, member_id), json=data
+        )
+        return OrganisationMember(**response["data"])
+
+    def remove_member(
+        self, organisation_or_id: Organisation | int, member_id: int
+    ) -> bool:
+        """Remove a member from an organisation.
+
+        This only removes the membership: the character itself is untouched.
+
+        Args:
+            organisation_or_id: The organisation or its type-specific ID
+            member_id: The membership ID (not the character's ID)
+
+        Returns:
+            True if successful
+        """
+        self.client._request(
+            "DELETE", self._members_url(organisation_or_id, member_id)
+        )
         return True

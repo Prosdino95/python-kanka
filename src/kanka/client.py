@@ -28,7 +28,7 @@ from .exceptions import (
     RateLimitError,
     ValidationError,
 )
-from .managers import EntityManager
+from .managers import EntityManager, OrganisationManager
 from .models.common import GalleryImage, SearchResult
 from .models.entities import (
     Calendar,
@@ -169,7 +169,7 @@ class KankaClient:
         self._journals = EntityManager(self, "journals", Journal)
         self._locations = EntityManager(self, "locations", Location)
         self._notes = EntityManager(self, "notes", Note)
-        self._organisations = EntityManager(self, "organisations", Organisation)
+        self._organisations = OrganisationManager(self, "organisations", Organisation)
         self._quests = EntityManager(self, "quests", Quest)
         self._races = EntityManager(self, "races", Race)
         self._tags = EntityManager(self, "tags", Tag)
@@ -247,11 +247,12 @@ class KankaClient:
         return self._notes
 
     @property
-    def organisations(self) -> EntityManager[Organisation]:
-        """Access organisation entities.
+    def organisations(self) -> OrganisationManager:
+        """Access organisation entities and their members.
 
         Returns:
-            EntityManager[Organisation]: Manager for Organisation entity operations
+            OrganisationManager: Manager for Organisation entity operations,
+                including the member list
         """
         return self._organisations
 

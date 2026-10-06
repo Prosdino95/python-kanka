@@ -33,6 +33,7 @@ nav:
       - Entity CRUD Operations: entities.md
       - Entity Types Reference: entity-types-reference.md
       - Posts: posts.md
+      - Organisation Members: organisation-members.md
       - Search and Filtering: search-and-filtering.md
       - Last Sync: last-sync.md
       - Pagination: pagination.md

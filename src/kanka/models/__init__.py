@@ -23,6 +23,7 @@ from .common import (
     EntityImageData,
     EntityImageInfo,
     GalleryImage,
+    OrganisationMember,
     SearchResult,
     Trait,
 )
@@ -66,4 +67,5 @@ __all__ = [
     "EntityAsset",
     "EntityImageData",
     "EntityImageInfo",
+    "OrganisationMember",
 ]

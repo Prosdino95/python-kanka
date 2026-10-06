@@ -3,10 +3,14 @@
 import hashlib
 from unittest.mock import Mock, mock_open, patch
 
-from kanka.managers import EntityManager
+from kanka.managers import EntityManager, OrganisationManager
 from kanka.models.base import Post
-from kanka.models.common import EntityAsset, EntityImageInfo
-from kanka.models.entities import Character
+from kanka.models.common import (
+    EntityAsset,
+    EntityImageInfo,
+    OrganisationMember,
+)
+from kanka.models.entities import Character, Organisation
 
 from .utils import (
     create_api_response,
@@ -1337,3 +1341,108 @@ class TestLongPlaceholderTruncation:
 
         # Should NOT have uploaded a new file (reused existing)
         self.mock_client._upload_request.assert_not_called()
+
+
+class TestOrganisationMembers:
+    """Test OrganisationManager member operations."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.mock_client = Mock()
+        self.mock_client._request = Mock()
+        self.manager = OrganisationManager(
+            self.mock_client, "organisations", Organisation
+        )
+
+    def _member_data(self, member_id=1, **overrides):
+        """Build a membership payload as the API returns it."""
+        data = {
+            "id": member_id,
+            "organisation_id": 2,
+            "character_id": 10,
+            "role": "Sovrintendente",
+            "is_private": False,
+        }
+        data.update(overrides)
+        return data
+
+    def test_list_members(self):
+        """Test listing the members of an organisation."""
+        self.mock_client._request.return_value = {"data": [self._member_data()]}
+
+        members = self.manager.list_members(2)
+
+        self.mock_client._request.assert_called_with(
+            "GET",
+            "organisations/2/organisation_members",
+            params={"page": 1, "limit": 30},
+        )
+        assert len(members) == 1
+        assert isinstance(members[0], OrganisationMember)
+        assert members[0].character_id == 10
+        assert members[0].role == "Sovrintendente"
+
+    def test_add_member_repeats_organisation_id_in_body(self):
+        """Test that the organisation ID is sent in the body as well."""
+        self.mock_client._request.return_value = {"data": self._member_data()}
+
+        member = self.manager.add_member(2, 10, role="Sovrintendente")
+
+        self.mock_client._request.assert_called_with(
+            "POST",
+            "organisations/2/organisation_members",
+            json={
+                "organisation_id": 2,
+                "character_id": 10,
+                "role": "Sovrintendente",
+            },
+        )
+        assert member.id == 1
+
+    def test_add_member_omits_unset_fields(self):
+        """Test that optional fields are left out when not given."""
+        self.mock_client._request.return_value = {"data": self._member_data(role=None)}
+
+        self.manager.add_member(2, 10)
+
+        _, kwargs = self.mock_client._request.call_args
+        assert kwargs["json"] == {"organisation_id": 2, "character_id": 10}
+
+    def test_add_member_with_organisation_object(self):
+        """Test that an organisation object is accepted, using its own ID."""
+        organisation = Organisation(
+            **create_mock_entity("organisation", 2, name="I Veglianti")
+        )
+        self.mock_client._request.return_value = {"data": self._member_data()}
+
+        self.manager.add_member(organisation, 10)
+
+        args, _ = self.mock_client._request.call_args
+        # The type-specific ID, not the entity_id
+        assert args[1] == "organisations/2/organisation_members"
+
+    def test_update_member_sends_only_given_fields(self):
+        """Test that updating a role does not require repeating the IDs."""
+        self.mock_client._request.return_value = {
+            "data": self._member_data(role="Guardiano")
+        }
+
+        member = self.manager.update_member(2, 1, role="Guardiano")
+
+        self.mock_client._request.assert_called_with(
+            "PATCH",
+            "organisations/2/organisation_members/1",
+            json={"role": "Guardiano"},
+        )
+        assert member.role == "Guardiano"
+
+    def test_remove_member(self):
+        """Test removing a membership."""
+        self.mock_client._request.return_value = {}
+
+        result = self.manager.remove_member(2, 1)
+
+        self.mock_client._request.assert_called_with(
+            "DELETE", "organisations/2/organisation_members/1"
+        )
+        assert result is True

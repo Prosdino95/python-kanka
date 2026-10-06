@@ -180,6 +180,41 @@ class EntityAsset(KankaModel):
     url: str | None = Field(default=None, alias="_url")
 
 
+class OrganisationMember(KankaModel):
+    """Membership of a character in an organisation.
+
+    Members live on their own endpoint and are addressed with type-specific
+    IDs, not entity_ids.
+
+    Attributes:
+        id: Membership ID (not the character's, nor the organisation's)
+        organisation_id: Organisation's type-specific ID
+        character_id: Character's type-specific ID
+        role: The character's role in the organisation
+        is_private: Whether the membership is private
+        status_id: Status of the membership
+        pin_id: Pin setting
+        parent_id: Parent membership, for nested organisations
+        created_at: Creation timestamp
+        created_by: User ID who created
+        updated_at: Last update timestamp
+        updated_by: User ID who last updated
+    """
+
+    id: int
+    organisation_id: int
+    character_id: int
+    role: str | None = None
+    is_private: bool = False
+    status_id: int | None = None
+    pin_id: int | None = None
+    parent_id: int | None = None
+    created_at: datetime | None = None
+    created_by: int | None = None
+    updated_at: datetime | None = None
+    updated_by: int | None = None
+
+
 class EntityImageData(KankaModel):
     """Image URL data for an entity.
 
