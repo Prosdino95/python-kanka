@@ -61,7 +61,8 @@ class KankaClient:
     - Respecting the API's rate limit reset times
 
     Attributes:
-        BASE_URL (str): The base URL for the Kanka API
+        BASE_URL (str): The base URL for the Kanka API, overridable with the
+            KANKA_BASE_URL environment variable (e.g. for self-hosted instances)
         token (str): Authentication token for API access
         campaign_id (int): ID of the campaign to work with
         session: Configured requests.Session instance
@@ -128,6 +129,9 @@ class KankaClient:
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.max_retry_delay = max_retry_delay
+
+        # Allow pointing at a self-hosted instance
+        self.BASE_URL = os.environ.get("KANKA_BASE_URL", self.BASE_URL).rstrip("/")
 
         # Debug mode configuration
         self._debug_mode = os.environ.get("KANKA_DEBUG_MODE", "").lower() == "true"
