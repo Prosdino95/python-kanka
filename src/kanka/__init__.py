@@ -59,6 +59,7 @@ from .models import (  # Base models; Entity models; Common models
     Post,
     Quest,
     Race,
+    Relation,
     SearchResult,
     Tag,
     Timeline,
@@ -94,6 +95,7 @@ __all__ = [
     "Timeline",
     # Common models
     "Post",
+    "Relation",
     "SearchResult",
     "Trait",
     "GalleryImage",

@@ -180,6 +180,46 @@ class EntityAsset(KankaModel):
     url: str | None = Field(default=None, alias="_url")
 
 
+class Relation(KankaModel):
+    """A directed link between two entities.
+
+    Relations are one-directional: the mirror on the other side is a separate
+    record, linked back through mirror_id, and deleting one leaves the other
+    in place.
+
+    Attributes:
+        id: Relation ID, the handle for update and delete
+        owner_id: Entity the relation belongs to (an entity_id)
+        target_id: Entity it points at (an entity_id)
+        relation: The label, e.g. "Capomastro di"
+        attitude: Numeric attitude towards the target
+        colour: Display colour
+        visibility_id: Visibility setting (1=all, 2=admin)
+        is_star: Whether the relation is pinned to the entity header
+        is_pinned: Whether the relation is pinned
+        mirror_id: The relation on the other side, when two_way was used
+        created_at: Creation timestamp
+        created_by: User ID who created
+        updated_at: Last update timestamp
+        updated_by: User ID who last updated
+    """
+
+    id: int
+    owner_id: int
+    target_id: int
+    relation: str | None = None
+    attitude: int | None = None
+    colour: str | None = None
+    visibility_id: int | None = None
+    is_star: bool = False
+    is_pinned: bool = False
+    mirror_id: int | None = None
+    created_at: datetime | None = None
+    created_by: int | None = None
+    updated_at: datetime | None = None
+    updated_by: int | None = None
+
+
 class OrganisationMember(KankaModel):
     """Membership of a character in an organisation.
 

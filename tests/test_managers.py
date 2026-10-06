@@ -9,6 +9,7 @@ from kanka.models.common import (
     EntityAsset,
     EntityImageInfo,
     OrganisationMember,
+    Relation,
 )
 from kanka.models.entities import Character, Organisation
 
@@ -1446,3 +1447,113 @@ class TestOrganisationMembers:
             "DELETE", "organisations/2/organisation_members/1"
         )
         assert result is True
+
+
+class TestEntityRelations:
+    """Test relation operations on EntityManager."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.mock_client = Mock()
+        self.mock_client._request = Mock()
+        self.manager = EntityManager(self.mock_client, "characters", Character)
+
+    def _relation_data(self, relation_id=1, **overrides):
+        """Build a relation payload as the API returns it."""
+        data = {
+            "id": relation_id,
+            "owner_id": 4,
+            "target_id": 2,
+            "relation": "Capomastro di",
+            "attitude": None,
+            "visibility_id": 1,
+            "mirror_id": None,
+        }
+        data.update(overrides)
+        return data
+
+    def test_list_relations(self):
+        """Test listing the relations an entity owns."""
+        self.mock_client._request.return_value = {"data": [self._relation_data()]}
+
+        relations = self.manager.list_relations(4)
+
+        self.mock_client._request.assert_called_with(
+            "GET", "entities/4/relations", params={"page": 1, "limit": 30}
+        )
+        assert len(relations) == 1
+        assert isinstance(relations[0], Relation)
+        assert relations[0].target_id == 2
+
+    def test_create_relation_repeats_owner_in_body(self):
+        """Test that owner_id is sent in the body as well as in the URL."""
+        self.mock_client._request.return_value = {"data": [self._relation_data()]}
+
+        relation = self.manager.create_relation(4, 2, "Capomastro di")
+
+        self.mock_client._request.assert_called_with(
+            "POST",
+            "entities/4/relations",
+            json={"owner_id": 4, "target_id": 2, "relation": "Capomastro di"},
+        )
+        assert relation.id == 1
+
+    def test_create_relation_picks_the_new_one_from_the_full_list(self):
+        """Test that the newest matching relation is returned, not the first."""
+        self.mock_client._request.return_value = {
+            "data": [
+                self._relation_data(1, target_id=99, relation="altro"),
+                self._relation_data(2),
+                self._relation_data(7),
+            ]
+        }
+
+        relation = self.manager.create_relation(4, 2, "Capomastro di")
+
+        assert relation.id == 7
+
+    def test_create_relation_two_way(self):
+        """Test that two_way is sent, since is_mirrored does nothing."""
+        self.mock_client._request.return_value = {
+            "data": [self._relation_data(relation="allea con", mirror_id=8)]
+        }
+
+        relation = self.manager.create_relation(
+            4, 2, "allea con", attitude=50, visibility_id=2, two_way=True
+        )
+
+        _, kwargs = self.mock_client._request.call_args
+        assert kwargs["json"] == {
+            "owner_id": 4,
+            "target_id": 2,
+            "relation": "allea con",
+            "attitude": 50,
+            "visibility_id": 2,
+            "two_way": True,
+        }
+        assert relation.mirror_id == 8
+
+    def test_update_relation_sends_only_given_fields(self):
+        """Test that a partial update does not repeat the IDs."""
+        self.mock_client._request.return_value = {
+            "data": self._relation_data(relation="in conflitto con")
+        }
+
+        relation = self.manager.update_relation(4, 1, relation="in conflitto con")
+
+        self.mock_client._request.assert_called_with(
+            "PATCH",
+            "entities/4/relations/1",
+            json={"relation": "in conflitto con"},
+        )
+        assert relation.relation == "in conflitto con"
+
+    def test_delete_relation(self):
+        """Test deleting one side of a relation."""
+        self.mock_client._request.return_value = {}
+
+        assert self.manager.delete_relation(4, 1) is True
+
+        self.mock_client._request.assert_called_with(
+            "DELETE", "entities/4/relations/1"
+        )

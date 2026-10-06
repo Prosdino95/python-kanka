@@ -12,6 +12,7 @@ from .models.common import (
     EntityAsset,
     EntityImageInfo,
     OrganisationMember,
+    Relation,
 )
 from .models.entities import Organisation
 
@@ -773,6 +774,166 @@ class EntityManager[T: Entity]:
         return getattr(self, "_last_posts_links", {})
 
     # Entity Assets functionality
+
+    def list_relations(
+        self, entity_or_id: T | int, page: int = 1, limit: int = 30
+    ) -> List[Relation]:  # noqa: UP006
+        """List the relations an entity owns.
+
+        IMPORTANT: Relations use the entity_id, not the type-specific ID!
+
+        Args:
+            entity_or_id: The entity object OR its entity_id
+            page: Page number
+            limit: Results per page
+
+        Returns:
+            List of Relation instances owned by this entity
+        """
+        entity_id = self._extract_entity_id(entity_or_id)
+        params: dict[str, int | str] = {"page": page, "limit": limit}
+
+        url = f"entities/{entity_id}/relations"
+        response = self.client._request("GET", url, params=params)
+        return [Relation(**item) for item in response["data"]]
+
+    def create_relation(
+        self,
+        entity_or_id: T | int,
+        target_id: int,
+        relation: str,
+        *,
+        attitude: int | None = None,
+        visibility_id: int | None = None,
+        two_way: bool = False,
+        **kwargs,
+    ) -> Relation:
+        """Create a relation from one entity to another.
+
+        Relations are one-directional. Pass two_way=True to also create the
+        mirror on the target, which the API links back through mirror_id.
+        Note that "is_mirrored" is accepted by the API and does nothing: the
+        field that works is two_way.
+
+        IMPORTANT: Relations use entity_ids on both sides, not the
+        type-specific IDs!
+
+        Args:
+            entity_or_id: The owning entity object OR its entity_id
+            target_id: The entity_id the relation points at
+            relation: The label, e.g. "Capomastro di"
+            attitude: Numeric attitude towards the target
+            visibility_id: Visibility setting (1=all, 2=admin)
+            two_way: Also create the mirror relation on the target
+            **kwargs: Additional relation fields
+
+        Returns:
+            The created Relation
+
+        Note:
+            The API answers with every relation the entity owns, not just the
+            new one, so the newest match on target and label is returned.
+        """
+        entity_id = self._extract_entity_id(entity_or_id)
+
+        # The API wants owner_id in the body as well as in the URL
+        data: dict[str, Any] = {
+            "owner_id": entity_id,
+            "target_id": target_id,
+            "relation": relation,
+            **kwargs,
+        }
+        if attitude is not None:
+            data["attitude"] = attitude
+        if visibility_id is not None:
+            data["visibility_id"] = visibility_id
+        if two_way:
+            data["two_way"] = True
+
+        url = f"entities/{entity_id}/relations"
+        response = self.client._request("POST", url, json=data)
+
+        payload = response["data"]
+        if not isinstance(payload, list):
+            return Relation(**payload)
+
+        candidates = [
+            item
+            for item in payload
+            if item.get("target_id") == target_id
+            and item.get("relation") == relation
+            and item.get("owner_id") == entity_id
+        ]
+        if not candidates:
+            raise NotFoundError("The created relation was not returned by the API")
+
+        return Relation(**max(candidates, key=lambda item: item["id"]))
+
+    def update_relation(
+        self,
+        entity_or_id: T | int,
+        relation_id: int,
+        *,
+        relation: str | None = None,
+        attitude: int | None = None,
+        visibility_id: int | None = None,
+        **kwargs,
+    ) -> Relation:
+        """Update an existing relation.
+
+        Only the given fields are sent. The mirror is not touched: updating
+        one side leaves the other as it was.
+
+        Args:
+            entity_or_id: The owning entity object OR its entity_id
+            relation_id: The relation ID
+            relation: New label, if changing it
+            attitude: New attitude, if changing it
+            visibility_id: New visibility, if changing it
+            **kwargs: Additional fields to update
+
+        Returns:
+            The updated Relation
+        """
+        entity_id = self._extract_entity_id(entity_or_id)
+
+        data: dict[str, Any] = dict(kwargs)
+        if relation is not None:
+            data["relation"] = relation
+        if attitude is not None:
+            data["attitude"] = attitude
+        if visibility_id is not None:
+            data["visibility_id"] = visibility_id
+
+        url = f"entities/{entity_id}/relations/{relation_id}"
+        response = self.client._request("PATCH", url, json=data)
+
+        payload = response["data"]
+        if isinstance(payload, list):
+            payload = next(
+                (item for item in payload if item.get("id") == relation_id), payload[0]
+            )
+        return Relation(**payload)
+
+    def delete_relation(self, entity_or_id: T | int, relation_id: int) -> bool:
+        """Delete a relation.
+
+        Only this side is deleted. If the relation has a mirror, the mirror
+        survives with its mirror_id cleared, so delete it as well when you
+        want the link gone from both entities.
+
+        Args:
+            entity_or_id: The owning entity object OR its entity_id
+            relation_id: The relation ID
+
+        Returns:
+            True if successful
+        """
+        entity_id = self._extract_entity_id(entity_or_id)
+
+        url = f"entities/{entity_id}/relations/{relation_id}"
+        self.client._request("DELETE", url)
+        return True
 
     def list_assets(
         self, entity_or_id: T | int, page: int = 1, limit: int = 30

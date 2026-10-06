@@ -34,6 +34,7 @@ nav:
       - Entity Types Reference: entity-types-reference.md
       - Posts: posts.md
       - Organisation Members: organisation-members.md
+      - Relations: relations.md
       - Search and Filtering: search-and-filtering.md
       - Last Sync: last-sync.md
       - Pagination: pagination.md
