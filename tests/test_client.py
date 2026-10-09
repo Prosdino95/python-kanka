@@ -38,6 +38,22 @@ class TestKankaClient:
         assert client.session.headers["Accept"] == "application/json"
         assert client.session.headers["Content-Type"] == "application/json"
 
+    def test_host_header_override(self, monkeypatch):
+        """Test that KANKA_HOST_HEADER replaces the Host sent with requests."""
+        monkeypatch.setenv("KANKA_HOST_HEADER", "kanka.example.org")
+
+        client = KankaClient(token="test_token", campaign_id=123)
+
+        assert client.session.headers["Host"] == "kanka.example.org"
+
+    def test_no_host_header_by_default(self, monkeypatch):
+        """Test that requests keeps deriving Host from the URL by default."""
+        monkeypatch.delenv("KANKA_HOST_HEADER", raising=False)
+
+        client = KankaClient(token="test_token", campaign_id=123)
+
+        assert "Host" not in client.session.headers
+
     def test_manager_initialization(self):
         """Test that all entity managers are initialized."""
         client = KankaClient(token="test_token", campaign_id=123)

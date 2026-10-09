@@ -66,6 +66,8 @@ class KankaClient:
     Attributes:
         BASE_URL (str): The base URL for the Kanka API, overridable with the
             KANKA_BASE_URL environment variable (e.g. for self-hosted instances)
+            and paired with KANKA_HOST_HEADER when the instance routes its API
+            by Host header and is reached under another name
         token (str): Authentication token for API access
         campaign_id (int): ID of the campaign to work with
         session: Configured requests.Session instance
@@ -160,6 +162,13 @@ class KankaClient:
                 "Content-Type": "application/json",
             }
         )
+
+        # A single-domain Kanka CE routes its API by Host header, so a client
+        # reaching it under another name (e.g. a container on the same
+        # Docker network) must send the domain the instance expects
+        host_header = os.environ.get("KANKA_HOST_HEADER")
+        if host_header:
+            self.session.headers["Host"] = host_header
 
         # Initialize entity managers
         self._init_managers()
