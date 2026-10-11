@@ -7,7 +7,7 @@ name = "python-kanka"
 version = "2.6.2"
 description = "Python client for the Kanka API"
 readme = "README.md"
-requires-python = "==3.14.7"
+requires-python = "==3.14.8"
 license = {text = "MIT"}
 authors = [
     {name = "Erv Walter", email = "erv@ewal.net"}
@@ -32,10 +32,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ervwalter/python-kanka"
+Homepage = "https://github.com/twistymaze/python-kanka"
 Documentation = "https://python-kanka.ewal.dev/"
-Repository = "https://github.com/ervwalter/python-kanka"
-Issues = "https://github.com/ervwalter/python-kanka/issues"
+Repository = "https://github.com/twistymaze/python-kanka"
+Issues = "https://github.com/twistymaze/python-kanka/issues"
 
 [dependency-groups]
 docs = [
@@ -46,17 +46,17 @@ dev = [
     "pytest==9.1.1",
     "pytest-asyncio==1.4.0",
     "pytest-cov==7.1.0",
-    "pytest-mock==3.15.1",
-    "mypy==2.3.1",
-    "black==26.5.1",
-    "isort==8.0.1",
-    "ruff==0.16.6",
+    "pytest-mock==3.16.0",
+    "mypy==2.4.0",
+    "black==26.10.0",
+    "isort==9.0.2",
+    "ruff==0.16.10",
     "types-requests",
     "bump2version==1.0.1",
-    "build==1.6.0",
+    "build==1.6.1",
     "twine==7.0.0",
     "pre-commit==4.6.2",
-    "python-dotenv==1.2.3",
+    "python-dotenv==1.2.4",
 ]
 
 [tool.hatch.build.targets.wheel]
